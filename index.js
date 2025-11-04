@@ -18,11 +18,15 @@ app.post('/check-donation', async (req, res) => {
 
   let browser;
   try {
-    // Launch headless browser
-    browser = await puppeteer.launch({
+    const launchOptions = {
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+      args: [
+        '--no-sandbox',
+      ]
+    };
+
+    // Launch headless browser
+    browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
     
@@ -59,8 +63,13 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Donation checker server running on port ${PORT}`);
-  console.log(`Send POST requests to http://localhost:${PORT}/check-donation`);
-});
+// Only start the server when running locally (not inside Cloud Functions/Cloud Run)
+if (!process.env.K_SERVICE && !process.env.FUNCTION_TARGET) {
+  app.listen(PORT, () => {
+    console.log(`Donation checker server running on port ${PORT}`);
+    console.log(`Send POST requests to http://localhost:${PORT}/check-donation`);
+  });
+}
 
+// Export the Express app for Google Cloud Functions (HTTP gen2)
+export { app };
