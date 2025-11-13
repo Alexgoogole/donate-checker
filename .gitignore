@@ -1,1 +1,9 @@
 node_modules/
+.cache/
+.puppeteer_cache/
+npm-debug.log*
+.DS_Store
+*.log
+.gcloudignore
+.puppeteerrc.cjs
+node_modules/

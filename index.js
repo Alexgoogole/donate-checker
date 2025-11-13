@@ -1,12 +1,30 @@
-import express from 'express';
 import puppeteer from 'puppeteer';
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+/**
+ * Cloud Functions Gen2 HTTP handler for checking donation status
+ * @param {Object} req - Cloud Functions request object
+ * @param {Object} res - Cloud Functions response object
+ */
+export const checkDonation = async (req, res) => {
+  // Set CORS headers
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
 
-app.use(express.json());
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
 
-app.post('/check-donation', async (req, res) => {
+  // Only allow POST requests for the main endpoint
+  if (req.method !== 'POST') {
+    return res.status(405).json({ 
+      error: 'Method not allowed',
+      message: 'Only POST requests are supported'
+    });
+  }
+
   const { url } = req.body;
 
   if (!url) {
@@ -22,6 +40,9 @@ app.post('/check-donation', async (req, res) => {
       headless: true,
       args: [
         '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
       ]
     };
 
@@ -57,19 +78,30 @@ app.post('/check-donation', async (req, res) => {
       message: error.message 
     });
   }
-});
+};
 
-app.get('/health', (req, res) => {
+/**
+ * Cloud Functions Gen2 HTTP handler for health checks
+ * @param {Object} req - Cloud Functions request object
+ * @param {Object} res - Cloud Functions response object
+ */
+export const health = (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
   res.json({ status: 'ok' });
-});
+};
 
-// Only start the server when running locally (not inside Cloud Functions/Cloud Run)
-if (!process.env.K_SERVICE && !process.env.FUNCTION_TARGET) {
-  app.listen(PORT, () => {
-    console.log(`Donation checker server running on port ${PORT}`);
-    console.log(`Send POST requests to http://localhost:${PORT}/check-donation`);
-  });
-}
-
-// Export the Express app for Google Cloud Functions (HTTP gen2)
-export { app };
+/**
+ * Main entry point for Cloud Functions Gen2
+ * Routes requests to appropriate handlers
+ * @param {Object} req - Cloud Functions request object
+ * @param {Object} res - Cloud Functions response object
+ */
+export const app = async (req, res) => {
+  // Route to health check endpoint
+  if (req.path === '/health' || req.path === '/') {
+    return health(req, res);
+  }
+  
+  // Route to donation check endpoint
+  return checkDonation(req, res);
+};

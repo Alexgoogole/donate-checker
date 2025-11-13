@@ -1,17 +1,15 @@
 {
   "name": "donate-checker",
   "version": "1.0.0",
-  "description": "Automation tool to check donation status",
   "main": "index.js",
-  "type": "module",
   "scripts": {
-    "start": "node index.js"
-  },
-  "engines": {
-    "node": ">=18"
+    "postinstall": "PUPPETEER_SKIP_DOWNLOAD=false node node_modules/puppeteer/install.mjs",
+    "gcp-build": "PUPPETEER_SKIP_DOWNLOAD=false node node_modules/puppeteer/install.mjs",
+    "start": "functions-framework --target=app --port=${PORT:-8080}",
+    "deploy": "gcloud functions deploy donate-checker --gen2 --region=europe-central2 --docker-image=${IMAGE_URI:?set IMAGE_URI} --entry-point=app --trigger-http --allow-unauthenticated --memory=1024Mi --timeout=120s"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "puppeteer": "^24.15.0"
+    "@google-cloud/functions-framework": "^3.4.0",
+    "puppeteer": "^24.2.2"
   }
 }
